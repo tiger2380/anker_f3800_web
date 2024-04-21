@@ -156,7 +156,7 @@ class PowerField extends DeviceField {
 
 const fields = [
 	new UintField('battery', 0x4A),
-	new UintField('ac_output_power', 0x63),
+	new PowerField('ac_output_power', 0x63),
 	new DecimalField('time_remaining', 29, 1),
 	new PowerField('ac_input_power', 0x22),
 	new PowerField('total_dc_input_power', 0x4F),
@@ -167,6 +167,7 @@ const fields = [
 	new PowerField('dc_input_1', 89),
 	new PowerField('dc_input_2', 84),
 	new BoolField('ac_output_state', 149),
+	new BoolField('discharging', 162),
 ]
 
 const previousReponse = [];
@@ -176,6 +177,10 @@ function parseResponse(response) {
 	console.log(response);
 	if (response instanceof ArrayBuffer) {
 		let view = new DataView(response);
+		
+		if (view.getUint8(view.byteLength - 1) !== 219) {
+			return;
+		}
 
 		if (previousReponse.length > 0) {
 			for (let j = 0; j < view.byteLength - 1; j++) {
