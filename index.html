@@ -20,7 +20,27 @@
         <pre>
         <div id="details"></div>
         </pre>
+        
+        <!-- Charts will be rendered here -->
+        <!-- Solar INPUT chart -->
+        <div style="width: 100vw; height: 350px;">
+            <canvas id="solar_input"></canvas>
+        </div>
+        <!-- AC INPUT chart -->
+        <canvas id="ac_input"></canvas>
+        <!-- AC OUTPUT chart -->
+        <div style="width: 100vw; height: 350px;">
+            <canvas id="ac_output"></canvas>
+        </div>
+        <!-- BATTERY chart -->
+        <div style="width: 100vw; height: 350px;">
+            <canvas id="battery"></canvas>
+        </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-zoom/2.0.1/chartjs-plugin-zoom.min.js"></script>
+    <script src="charts.js"></script>
     <script src="EventEmitter.js"></script>
     <script src="utils.js"></script>
     <script src="enums.js"></script>

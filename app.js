@@ -184,8 +184,8 @@ function parseResponse(response) {
 
 		if (previousReponse.length > 0) {
 			for (let j = 0; j < view.byteLength - 1; j++) {
-				if (previousReponse[j] != getViewData(view, j)) {
-					console.log('Response: Index - ' + j + ' Old Data - ' + previousReponse[j] + ' New Data - ' + getViewData(view, j));
+				if (previousReponse[j] != view.getUint16(j, true)) {
+					console.log('Response: Index - ' + j + ' Old Data - ' + previousReponse[j] + ' New Data - ' + view.getUint16(j, true));
 				}
 			}
 		}
@@ -203,7 +203,7 @@ function parseResponse(response) {
 		}
 
 		for (let i = 0; i < view.byteLength - 1; i++) {
-			previousReponse[i] = getViewData(view, i);;
+			previousReponse[i] = view.getUint16(i, true);
 		}
 	} else {
 		if (previousReponse33.length > 0) {
@@ -301,13 +301,49 @@ function connect() {
 	);
 }
 
+function formatAMPM(date) {
+  var hours = date.getHours();
+  var minutes = date.getMinutes();
+  var seconds = date.getSeconds();
+  var ampm = hours >= 12 ? "pm" : "am";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+  minutes = minutes < 10 ? "0" + minutes : minutes;
+  seconds = seconds < 10 ? "0" + seconds : seconds;
+  var strTime = hours + ":" + minutes + ":" + seconds + " " + ampm;
+  return strTime;
+}
+
+const updateCharts = (data) => {
+	const timeNow = new Date();
+	const timeStr =
+		timeNow.getHours() + ":" + timeNow.getMinutes() + ":" + timeNow.getSeconds();
+
+	acOutputChart.data.datasets[0].data.push(data.ac_output_power);
+	acOutputChart.data.labels.push(formatAMPM(timeNow));
+	acOutputChart.update();
+
+	solarInputChart.data.datasets[0].data.push(data.total_dc_input_power);
+	solarInputChart.data.labels.push(formatAMPM(timeNow));
+	solarInputChart.update();
+
+	batteryChart.data.datasets[0].data.push(data.battery);
+	batteryChart.data.labels.push(formatAMPM(timeNow));
+	batteryChart.update();
+}
+
+/**
+ * Listen for income data.
+ */
 window.eventEmitter.on("update", async (data) => {
 	if (undefined === data) {
 		return;
 	}
 
+	updateCharts(data);
 	document.querySelector('#details').innerHTML = syntaxHighlight(data);
 });
+
 
 
 /**
