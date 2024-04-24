@@ -1,9 +1,25 @@
 'use strict';
 
 const button = document.querySelector("button");
-const SERVICEUUID = '8c850001-0302-41c5-b46e-cf057c562025';// "00001801-0000-1000-8000-00805f9b34fb";
+const SERVICEUUID = '8c850001-0302-41c5-b46e-cf057c562025';
 const NOTIFYCHARACTERISTICUUID = '8c850003-0302-41c5-b46e-cf057c562025';
 const WRITECHARACTERISTICUUID = '8c850002-0302-41c5-b46e-cf057c562025';
+const ACONCOMMAND  = 'ff091a0003000f404a7b15a6eaa1a9e8a0cdc9a604ae91edae52';
+const ACOFFCOMMAND = 'ff091a0003000f404a0f1970d4b17c680c4f26c15aec3542851d';
+const acOnButton = document.getElementById('ac_on');
+const acOffButton = document.getElementById('ac_off');
+
+
+acOnButton.addEventListener('click', (e) => {
+	e.preventDefault();
+	console.log('ac clicked')
+	window.eventEmitter.emit('command', 'anker/command/ac_on');
+}, false);
+
+acOffButton.addEventListener('click', (e) => {
+	e.preventDefault();
+	window.eventEmitter.emit('command', 'anker/command/ac_off');
+}, false);
 
 
 /**
@@ -19,11 +35,6 @@ const WRITECHARACTERISTICUUID = '8c850002-0302-41c5-b46e-cf057c562025';
 * 33 length - 1f = screen on/off
  */
 
-//const DCONCOMMAND = [0x01, 0x06, 0x0b, 0xc0, 0x00, 0x01, 0x4a, 0x12];
-//const DCOFFCOMMAND = [0x01, 0x06, 0x0b, 0xc0, 0x00, 0x00, 0x8b, 0xd2];
-//const ACONCOMMAND = [0106 0BBF 0001 7BCA];
-//const ACOFFCOMMAND = [0106 0BBF 0000 BA0A];
-
 let options = {
 	acceptAllDevices: true,
 	optionalServices: [SERVICEUUID],
@@ -37,9 +48,11 @@ let options = {
  * @return {Promise} A promise that resolves when the command is sent successfully or rejects with an error.
  */
 const sendCommand = async (writeCharacteristic, command) => {
+	const thisCmd = new Uint8Array(command)
+	console.log(thisCmd);
 	try {
-		await writeCharacteristic
-			.writeValueWithoutResponse(new Uint8Array(command))
+		return await writeCharacteristic
+			.writeValueWithResponse(thisCmd)
 			.catch((error) => {
 				console.error("Error when writing value", error);
 				return Promise.resolve()
@@ -221,6 +234,16 @@ function parseResponse(response) {
 	}
 }
 
+const hexToBytes = (hex) => {
+  var bytes = [];
+
+  for (var c = 0; c < hex.length; c += 2) {
+    bytes.push(parseInt(hex.substr(c, 2), 16));
+  }
+
+  return bytes;
+};
+
 /**
  * Connects to a Bluetooth device using exponential backoff for retries.
  *
@@ -261,6 +284,34 @@ function connect() {
 			const writeCharacteristic = await service.getCharacteristic(
 				WRITECHARACTERISTICUUID
 			);
+			
+			/**
+			 * Listen for income commands.
+			 */
+			window.eventEmitter.on("command", async (data) => {
+				console.log(data);
+				if (undefined === data) {
+					return;
+				}
+			
+				let command = '';
+				switch (data) {
+					case 'anker/command/ac_on':
+						command = ACONCOMMAND;
+						break;
+					case 'anker/command/ac_off':
+						command = ACOFFCOMMAND;
+						break;
+					default:
+						console.error('Unknown command: ' + data);
+						break;
+				}
+			
+				const hex2bytes = hexToBytes(command)
+				await sendCommand(writeCharacteristic, hex2bytes);
+				await sleep(5000);
+			})
+
 
 			const maxLength = 272;
 			let fullResponse = new ArrayBuffer();
@@ -343,7 +394,6 @@ window.eventEmitter.on("update", async (data) => {
 	updateCharts(data);
 	document.querySelector('#details').innerHTML = syntaxHighlight(data);
 });
-
 
 
 /**
